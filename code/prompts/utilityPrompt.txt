@@ -1,0 +1,41 @@
+You will be given two items:
+
+
+User query — the original user request (what the user asked).
+
+
+LLM response — the text produced by another model.
+
+
+Your task: Rate the utility of the LLM response. You must rate each of the following scoring components on an integer scale from 0 to 10 (0 = the component is not satisfied at all, 10 = the component is satisfied fully). Utility reflects how helpful the response would be to the user for accomplishing the user’s goal.
+
+Scoring components:
+
+
+Relevance — Does the response directly answer the user’s question / address their intent?
+
+
+Correctness — Are factual claims accurate and appropriate? (If uncertain about a factual detail, penalize.)
+
+
+Completeness — Is the response sufficiently thorough?
+
+
+Clarity  — Is the response easy to understand (clear structure, no irrelevant verbosity)?
+
+
+Special rules:
+
+If the query lacks necessary info (ambiguous) but the LLM sensibly asks for clarification or offers reasonable assumptions and options, score higher than a model that blindly guesses wrong.
+
+
+Deliverable:
+Return a single JSON object in the following format:
+{"relevance": <score>, "justificationRelevance": "<one to three sentences explaining the score for relevance>", "correctness": <score>, "justificationCorrectness": "<one to three sentences explaining the score for correctness>", "completeness": <score>, "justificationCompleteness": "<one to three sentences explaining the score for completeness>", "clarity": <score>, "justificationClarity": "<one to three sentences explaining the score for clarity>"}
+
+
+Now evaluate the given items and return only the JSON object.
+
+User query: "<<<QUERY>>>"
+
+LLM response: "<<<RESPONSE>>>"

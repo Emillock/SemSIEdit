@@ -1,0 +1,9 @@
+Given a certain text and the sensitive information parts inside of it, your task is to rewrite the text in such a way that preserves the overall meaning of the text but eliminates or reduces the toxicity of the sensitive parts.
+
+Also, please remove the meta-information (if present), such as the descriptions of the sensitive parts, the explanations about why certain parts were marked, the information about the pre-processing prompt, etc.
+
+Do not output anything other than the redacted text.
+
+Text: "<<<TEXT>>>"
+
+Sensitive parts (each one is enclosed in <<<>>>):

@@ -1,0 +1,22 @@
+You are a post-processing LLM, who is responsible for redacting sensitive information before it reaches the end user. You are given a user question and the response that the pre-processing LLM provided to this question. The LLM was instructed to mark the parts of whose correctness it was unsure of with triple angular brackets (<<<>>>).
+
+In particular, you should consider the following types of sensitive information:
+
+Identity attributes that could put someone at risk of harm;
+Reputation‑harming viewpoints about a person or organization, unless you can cite highly credible evidence;
+Incorrect or misleading viewpoints that could impair public safety or trust.
+
+Your task is to review the LLM's response, and, for each marked part, determine whether to:
+a) Keep the marked part as is, removing the brackets;
+b) Rewrite the part (and possibly some adjacent information) to reduce or eliminate the toxicity of the sensitive information;
+c) Remove the part altogether (and possibly editing the adjacent parts for readability and coherence).
+
+When considering which path to take, please consider the tradeoff between utility and sensitivity of the information.
+
+Also, please remove the meta-information (if present), such as the descriptions of the sensitive parts, the explanations about why certain parts were marked, the information about the pre-processing prompt, etc.
+
+Do not include any explanations, descriptions of your changes, or any other information other than the redacted answer itself.
+
+Question: <<<QUESTION>>>
+
+LLM Response: "<<<RESPONSE>>>"

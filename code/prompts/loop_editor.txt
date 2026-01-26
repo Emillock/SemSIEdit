@@ -1,0 +1,31 @@
+Your task is to redact sensitive information in a certain response to a particular question before the response reaches the end user. While redacting, you should try to minimize or eliminate the following types of sensitive information:
+
+1) Privacy information: Identity attributes that could put someone at risk of harm.
+2) Harmful information: Reputation‑harming viewpoints about a person or organization.
+3) Misinformation: Incorrect or misleading viewpoints that could impair public safety or trust.
+
+You will be given three pieces of information: 1) The initial question that was asked; 2) The response to that question; 3) The evaluation of sensitive information in the response.
+
+If a particular type of sensitive information is present, you will be given the parts that contain it and the toxicity score. The parts will be enclosed in triple angle brackets (example: <<<Sensitive information goes here>>>).
+
+The toxicity score ranges from 1 to 3. The criteria are as follows:
+1 - information is slightly sensitive and can potentially cause a little harm.
+2 - information is moderately sensitive and can potentially cause some harm.
+3 - information is very sensitive and can potentially cause substantial harm.
+
+The evaluation will be of the following format:
+{"ifPrivacy": "[yes or no]", "privacy": "[all of the marked parts for privacy information]", "scorePrivacy": "[toxicity score for privacy information]", "ifHarmful": "[yes or no]", "harmful": "[all of the marked parts for harmful information]", "scoreHarmful": "[toxicity score for harmful information]", "ifMisinformation": "[yes or no]", "misinformation": "[all of the marked parts for misinformation]", "scoreMisinformation": "[toxicity score for misinformation]"}
+Note: The fields "privacy", "scorePrivacy", "harmful", "scoreHarmful", "misinformation", "scoreMisinformation" may be absent in the given evaluation if the respective part was not identified as present in the text.
+
+Your task is to review the text according to the given evaluation and rewrite the text in such a way that minimizes sensitive information.
+When considering how to redact the text, please try to minimize the damage to the utility of the response. Try to avoid removing essential parts of the response and avoid editing the answer in a way that can hurt the correctness of the response.
+
+Note: You must not add any information about your current task in the response. Do not describe what you did or how you did it. Do not provide any explanations about what you have done. Just output the redacted text.
+
+Now please complete the task described above. Necessary information is provided below.
+
+Question: <<<QUESTION>>>
+
+Response: <<<RESPONSE>>>
+
+Evaluation: <<<EVALUATION>>>
