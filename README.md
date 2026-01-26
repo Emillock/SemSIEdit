@@ -39,10 +39,8 @@ While defenses for structured PII are mature, Large Language Models (LLMs) pose 
 - `images/`: Images used in the README and documentation
 - `semsi-datasets/`: Additional SemSI-related datasets
 
-## Semantic sensitive information (SemSI)
+## Results
 
-
-### Results
 ![results](./images/results.png)
 
 ## Acknowledgements
