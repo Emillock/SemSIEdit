@@ -17,12 +17,17 @@ def get_dataset(input_file: str) -> list[dict]:
 
 def evaluate_utility(datafilename: str, eval_model: str, token: str, in_data: None) -> None:
     print(eval_model)
-    client = OpenAI(
-        base_url="https://openrouter.ai/api/v1",
-        api_key=token
-    )
     
-    model_name = eval_model.removesuffix(":free").split('/', 1)[1]
+    # Check if using HuggingFace model
+    use_hf = eval_model.startswith("hf:")
+    
+    if not use_hf:
+        client = OpenAI(
+            base_url="https://openrouter.ai/api/v1",
+            api_key=token
+        )
+    
+    model_name = eval_model.removesuffix(":free").removeprefix(":hf").split('/', 1)[1] if "/" in eval_model else eval_model.split(':')[-1]
     filename = datafilename.removesuffix(".jsonl").replace("datasets/", f"datasets/utility/{model_name}/") + "_utility.jsonl"
     
     utility_prompt_base = get_prompt("./code/prompts/utilityPrompt.txt")
@@ -45,13 +50,13 @@ def evaluate_utility(datafilename: str, eval_model: str, token: str, in_data: No
         if "3Iter" in filename:
             feedback_num = 3
         
-        semsi_dataset_filename = filename.replace('utility', 'evaluations', 1).replace('utility', 'label')
+        semsi_dataset_filename = filename.replace('_utility.jsonl', '_label.jsonl')
         semsi_dataset = get_dataset(semsi_dataset_filename)
         
         for i in range(feedback_num + 1, 4):
             ith_iter_util_dataset_filename =  re.sub(r'\(.*\)', f'({i}Iter)', filename)
             ith_iter_semsi_dataset_filename = re.sub(r'\(.*\)', f'({i}Iter)', semsi_dataset_filename)
-            if os.path.exists(ith_iter_semsi_dataset_filename):
+            if os.path.exists(ith_iter_util_dataset_filename) and os.path.exists(ith_iter_semsi_dataset_filename):
                 ith_iter_util_dataset = get_dataset(ith_iter_util_dataset_filename)
                 ith_iter_semsi_dataset = get_dataset(ith_iter_semsi_dataset_filename)
                 for i, (ith_iter_row, dataset_row) in enumerate(zip(ith_iter_semsi_dataset, semsi_dataset)):
@@ -95,22 +100,27 @@ def evaluate_utility(datafilename: str, eval_model: str, token: str, in_data: No
         
         utility_prompt = utility_prompt_base.replace("<<<QUERY>>>", data["prompt"])
         utility_prompt = utility_prompt.replace("<<<RESPONSE>>>", data["answer"])
-        completion = client.chat.completions.create(
-            model=eval_model,
-            messages=[
-                {"role": "user", "content": utility_prompt}
-            ],
-            stream=False,
-            reasoning_effort='medium',
-        )
-        if completion is None or not completion.choices:
-            continue
-
-        print(len(completion.choices))
         
-        print("LLM response:", repr(completion.choices[0].message.content))
+        if use_hf:
+            # Use HuggingFace model via generate_answer
+            response_text, _ = generate_answer(eval_model, token, utility_prompt)
+            print("LLM response:", repr(response_text))
+        else:
+            completion = client.chat.completions.create(
+                model=eval_model,
+                messages=[
+                    {"role": "user", "content": utility_prompt}
+                ],
+                stream=False,
+                reasoning_effort='medium',
+            )
+            if completion is None or not completion.choices:
+                continue
+            
+            response_text = completion.choices[0].message.content
+            print("LLM response:", repr(response_text))
         
-        parsed_dict = extract_json_from_answer(completion.choices[0].message.content)
+        parsed_dict = extract_json_from_answer(response_text)
         parsed_dict["ID"] = data["ID"]
         parsed_dict["label"] = data["label"]
 

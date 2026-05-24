@@ -129,6 +129,7 @@ celerybeat.pid
 
 # Environments
 .env
+**/.env
 .venv
 env/
 venv/
@@ -179,3 +180,6 @@ code/my-venv
 anaconda_projects
 
 hf_offload
+
+.claude
+.vscode

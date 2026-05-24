@@ -112,7 +112,8 @@ def evaluate_llama_guard(source_name: str, max_lines: int = -1) -> None:
             done_ids.append(data["ID"])
         print("All done!")
     
-    run_with_retry(generate)
+    # Use run_without_retry since we don't need tokens for the hardcoded model
+    run_without_retry(generate)
 
 
 if __name__ == '__main__':

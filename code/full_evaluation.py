@@ -16,7 +16,15 @@ if __name__ == "__main__":
                 # "example-dataset.jsonl",
     ]
 
-    evaluate = evaluate_semsi_openai if '/' in eval_model else evaluate_semsi_ollama
+    # Determine which evaluation function to use based on model type
+    if eval_model.startswith("hf:"):
+        # For HuggingFace models, we need a different approach that doesn't require tokens
+        print(f"Using HuggingFace model for evaluation: {eval_model}")
+        # For now, skip HF model evaluation or implement HF evaluation separately
+        print("Note: HuggingFace model evaluation is not yet implemented")
+        sys.exit(0)
+    else:
+        evaluate = evaluate_semsi_openai if '/' in eval_model else evaluate_semsi_ollama
 
     for datafilename in backlog:
         datafilename = f"./datasets/{datafilename}"

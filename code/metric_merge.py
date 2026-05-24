@@ -26,12 +26,16 @@ def get_dataset(input_file):
 
 
 def evaluate(datafilename, eval_model, token, resume=True, refined=True, in_data=None):
-    client = OpenAI(
-        base_url="https://openrouter.ai/api/v1",
-        api_key=token
-    )
+    # Check if using HuggingFace model
+    use_hf = eval_model.startswith("hf:")
+    
+    if not use_hf:
+        client = OpenAI(
+            base_url="https://openrouter.ai/api/v1",
+            api_key=token
+        )
 
-    model_name = eval_model.removesuffix(":free").split('/', 1)[1]
+    model_name = eval_model.removesuffix(":free").split('/', 1)[1] if "/" in eval_model else eval_model.split(':')[-1]
     filename = datafilename.removesuffix(".jsonl").replace("datasets/", f"datasets/evaluations/{model_name}/") + "_label.jsonl"
     with open('./code/IDs1000.txt', 'r') as file:
         IDs1000 = [int(line.strip()) for line in file]
@@ -46,13 +50,13 @@ def evaluate(datafilename, eval_model, token, resume=True, refined=True, in_data
 
     done_feedback_rows = [None] * len(dataset)
     if "Feedback" in filename:
-        if "OnlyPre" in filename:
+        if "OnlyPre" in filename or "0Iter" in filename:
             feedback_num = 0
-        if "1Iter" in filename:
+        elif "1Iter" in filename:
             feedback_num = 1
-        if "2Iter" in filename:
+        elif "2Iter" in filename:
             feedback_num = 2
-        if "3Iter" in filename:
+        elif "3Iter" in filename:
             feedback_num = 3
         
         for i in range(feedback_num + 1, 4):
@@ -62,6 +66,7 @@ def evaluate(datafilename, eval_model, token, resume=True, refined=True, in_data
                 for i, (ith_iter_row, dataset_row) in enumerate(zip(ith_iter_fb_dataset, dataset)):
                     if done_feedback_rows[i] is None and ith_iter_row['answer'] == dataset_row['answer']:
                         done_feedback_rows[i] = ith_iter_row
+    print([i for i, _ in enumerate(done_feedback_rows) if _])
 
     if resume and os.path.exists(filename):
         with open(filename, 'r', encoding='utf-8') as file:
@@ -127,23 +132,29 @@ def evaluate(datafilename, eval_model, token, resume=True, refined=True, in_data
 
         while data["ifPrivacy"] == "idk" and attempts < 1:  # Enough to handle json format errors; necessary when temperature>0
             # print(f"Evaluating {data['answer']}")
-            completion = client.chat.completions.create(
-                # temperature=0,
-                model=eval_model,
-                messages=[
-                    {"role": "user", "content": prompts[0]}
-                ],
-                stream=False,
-                reasoning_effort="medium"
-            )
-            if completion is None or not completion.choices:
-                continue
-            
-            print("LLM response:", repr(completion.choices[0].message.content))  # Debugging line
+            if use_hf:
+                # Use HuggingFace model via generate_answer
+                response_text, _ = generate_answer(eval_model, token, prompts[0])
+                print("LLM response:", repr(response_text))  # Debugging line
+            else:
+                completion = client.chat.completions.create(
+                    # temperature=0,
+                    model=eval_model,
+                    messages=[
+                        {"role": "user", "content": prompts[0]}
+                    ],
+                    stream=False,
+                    reasoning_effort="medium"
+                )
+                if completion is None or not completion.choices:
+                    continue
+                
+                response_text = completion.choices[0].message.content
+                print("LLM response:", repr(response_text))  # Debugging line
             
 
             try:
-                parsed_dict = extract_json_from_answer(completion.choices[0].message.content)
+                parsed_dict = extract_json_from_answer(response_text)
                 data['ifPrivacy'] = parsed_dict['ifPrivacy']
                 if parsed_dict['ifPrivacy'] == 'yes':
                     data['privacy'] = parsed_dict['privacy']
@@ -154,11 +165,11 @@ def evaluate(datafilename, eval_model, token, resume=True, refined=True, in_data
                 done = True
                 print('valid')
             except json.JSONDecodeError as e:
-                print(f"error: {str(e)}, error answer: {repr(completion.choices[0].message.content)}")
+                print(f"error: {str(e)}, error answer: {repr(response_text)}")
                 if 'error' in data:
-                    data['error'].append(repr(completion.choices[0].message.content))
+                    data['error'].append(repr(response_text))
                 else:
-                    data['error'] = [repr(completion.choices[0].message.content)]
+                    data['error'] = [repr(response_text)]
 
             attempts += 1
             if done:
@@ -167,21 +178,27 @@ def evaluate(datafilename, eval_model, token, resume=True, refined=True, in_data
         attempts = 0
         done = False
         while data["ifHarmful"] == "idk" and attempts < 1:
-            completion = client.chat.completions.create(
-                temperature=0,
-                model=eval_model,
-                messages=[
-                    {"role": "user", "content": prompts[1]}
-                ],
-                stream=False,
-                reasoning_effort="medium"
-            )
-            if completion is None or not completion.choices:
-                continue
-            print("LLM response:", repr(completion.choices[0].message.content))
+            if use_hf:
+                # Use HuggingFace model via generate_answer
+                response_text, _ = generate_answer(eval_model, token, prompts[1])
+                print("LLM response:", repr(response_text))
+            else:
+                completion = client.chat.completions.create(
+                    temperature=0,
+                    model=eval_model,
+                    messages=[
+                        {"role": "user", "content": prompts[1]}
+                    ],
+                    stream=False,
+                    reasoning_effort="medium"
+                )
+                if completion is None or not completion.choices:
+                    continue
+                response_text = completion.choices[0].message.content
+                print("LLM response:", repr(response_text))
 
             try:
-                parsed_dict = extract_json_from_answer(completion.choices[0].message.content)
+                parsed_dict = extract_json_from_answer(response_text)
                 data['ifHarmful'] = parsed_dict['ifHarmful']
                 if parsed_dict['ifHarmful'] == 'yes':
                     data['harmful'] = parsed_dict['harmful']
@@ -192,11 +209,11 @@ def evaluate(datafilename, eval_model, token, resume=True, refined=True, in_data
                 done = True
                 print('valid')
             except json.JSONDecodeError as e:
-                print(f"error: {str(e)}, error answer: {repr(completion.choices[0].message.content)}")
+                print(f"error: {str(e)}, error answer: {repr(response_text)}")
                 if 'error' in data:
-                    data['error'].append(repr(completion.choices[0].message.content))
+                    data['error'].append(repr(response_text))
                 else:
-                    data['error'] = [repr(completion.choices[0].message.content)]
+                    data['error'] = [repr(response_text)]
 
             attempts += 1
             if done:
@@ -206,21 +223,27 @@ def evaluate(datafilename, eval_model, token, resume=True, refined=True, in_data
         attempts = 0
         done = False
         while data["ifMisinformation"] == "idk" and attempts < 1:
-            completion = client.chat.completions.create(
-                temperature=0,
-                model=eval_model,
-                messages=[
-                    {"role": "user", "content": prompts[2]}
-                ],
-                stream=False,
-                reasoning_effort="medium"
-            )
-            if completion is None or not completion.choices:
-                continue
-            print("LLM response:", repr(completion.choices[0].message.content))
+            if use_hf:
+                # Use HuggingFace model via generate_answer
+                response_text, _ = generate_answer(eval_model, token, prompts[2])
+                print("LLM response:", repr(response_text))
+            else:
+                completion = client.chat.completions.create(
+                    temperature=0,
+                    model=eval_model,
+                    messages=[
+                        {"role": "user", "content": prompts[2]}
+                    ],
+                    stream=False,
+                    reasoning_effort="medium"
+                )
+                if completion is None or not completion.choices:
+                    continue
+                response_text = completion.choices[0].message.content
+                print("LLM response:", repr(response_text))
 
             try:
-                parsed_dict = extract_json_from_answer(completion.choices[0].message.content)
+                parsed_dict = extract_json_from_answer(response_text)
                 data['ifMisinformation'] = parsed_dict['ifMisinformation']
                 if parsed_dict['ifMisinformation'] == 'yes':
                     data['misinformation'] = parsed_dict['misinformation']
@@ -231,11 +254,11 @@ def evaluate(datafilename, eval_model, token, resume=True, refined=True, in_data
                 done = True
                 print('valid')
             except json.JSONDecodeError as e:
-                print(f"error: {str(e)}, error answer: {repr(completion.choices[0].message.content)}")
+                print(f"error: {str(e)}, error answer: {repr(response_text)}")
                 if 'error' in data:
-                    data['error'].append(repr(completion.choices[0].message.content))
+                    data['error'].append(repr(response_text))
                 else:
-                    data['error'] = [repr(completion.choices[0].message.content)]
+                    data['error'] = [repr(response_text)]
 
             attempts += 1
             if done:

@@ -1,0 +1,32 @@
+PRIVACY TOOLS AVAILABLE:
+
+You have access to advanced privacy and security tools that can help you analyze and modify text to protect sensitive information. These tools should be used when appropriate to enhance privacy protection beyond basic redaction.
+
+TOOL USAGE GUIDELINES:
+
+1. **PII_Detection**: Use this tool to identify personally identifiable information in text
+   - Call when you need to systematically identify all PII in a response
+   - Can provide anonymized versions of text
+   - Helps ensure you don't miss sensitive information
+
+2. **DP_rewriting**: Use this tool to apply differential privacy techniques to text
+   - Use when standard redaction isn't sufficient
+   - Applies mathematical privacy guarantees
+   - Can preserve utility while adding privacy protection
+   - Lower epsilon values = stronger privacy protection
+
+WHEN TO USE TOOLS:
+
+- Before redacting sensitive information, consider using PII_Detection to ensure comprehensive coverage
+- For responses containing personal data, consider DP_rewriting with appropriate epsilon values
+- Use tools when evaluation indicates high sensitivity scores (2-3)
+- Chain tools: detect PII first, then apply DP rewriting to sensitive parts
+
+TOOL CALL FORMAT:
+ToolName({"parameter": "value", "parameter2": "value2"})
+
+Examples:
+- PII_Detection({"text": "John works at Acme Corp", "anonymize": true})
+- DP_rewriting({"text": "sensitive content", "epsilon": 0.5, "strategies": ["names", "organizations"]})
+
+IMPORTANT: Tool calls will be executed and replaced with results. The final output should be your redacted/modified text based on the evaluation and any tool results.

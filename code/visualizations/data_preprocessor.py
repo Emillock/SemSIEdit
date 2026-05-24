@@ -83,7 +83,8 @@ def compute_metrics_baseline_feedback(df: pd.DataFrame, exclude_true=False, excl
     df_copy = df_copy[df_copy['error'].isna()]
     df_copy[occurrence_cols] = df_copy[occurrence_cols].replace({'yes': 1, 'no': 0}).astype(int)
     df_copy[toxicity_cols] = df_copy[toxicity_cols].fillna(0.0)
-    df_copy['method'] = df_copy['method'].replace('Feedback(3Iter)', 'Feedback')
+    df_copy['method'] = df_copy['method'].replace('Baseline', 'No Protection')
+    df_copy['method'] = df_copy['method'].replace('Feedback(3Iter)', 'PrivEdit')
     df_grouped = df_copy.groupby(by=['judge', 'model', 'method'])
 
     occurrence = df_grouped[occurrence_cols].apply(lambda row: row.any(axis=1)).groupby(by=['judge', 'model', 'method']).mean() * 100

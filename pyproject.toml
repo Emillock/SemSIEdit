@@ -8,6 +8,7 @@ dependencies = [
     "annotated-types>=0.7.0",
     "anyio==4.9.0",
     "archspec>=0.2.5",
+    "bitsandbytes>=0.49.2",
     "boltons>=25.0.0",
     "brotlicffi>=1.1.0.0",
     "certifi>=2025.8.3",
@@ -16,6 +17,9 @@ dependencies = [
     "colorama>=0.4.6",
     "cryptography>=46.0.2",
     "distro>=1.9.0",
+    "dotenv>=0.9.9",
+    "fastapi>=0.115.0",
+    "dp-fusion-lib>=0.1.0",
     "frozendict>=2.4.6",
     "h11==0.16.0",
     "hdbscan==0.8.40",
@@ -26,6 +30,11 @@ dependencies = [
     "joblib==1.5.1",
     "jsonpatch>=1.33",
     "jsonpointer==2.1",
+    "langchain>=0.3.28",
+    "langchain-community>=0.3.31",
+    "langchain-openai>=0.3.29",
+    "langchain-tavily>=0.2.17",
+    "langgraph>=1.0.1",
     "markdown-it-py>=4.0.0",
     "matplotlib>=3.10.8",
     "mdurl>=0.1.2",
@@ -38,8 +47,11 @@ dependencies = [
     "pinecone-plugin-assistant==1.7.0",
     "pinecone-plugin-interface==0.0.7",
     "pingouin>=0.5.5",
+    "pip>=26.0.1",
     "platformdirs>=4.4.0",
     "pluggy>=1.6.0",
+    "presidio-analyzer>=2.2.355",
+    "presidio-anonymizer>=2.2.355",
     "pyahocorasick>=2.2.0",
     "pycosat>=0.6.6",
     "pycparser>=2.23",
@@ -63,13 +75,24 @@ dependencies = [
     "steamreviews==0.9.5",
     "threadpoolctl==3.6.0",
     "tiktoken==0.9.0",
+    "torch>=2.10.0",
     "tqdm>=4.67.1",
+    "transformers>=5.0.0",
     "truststore>=0.10.4",
     "typing-extensions>=4.15.0",
     "typing-inspection>=0.4.2",
     "tzdata==2025.2",
     "urllib3>=2.5.0",
+    "uvicorn>=0.34.0",
     "wheel==0.45.1",
     "win-inet-pton>=1.1.0",
     "zstandard>=0.25.0",
 ]
+
+[[tool.uv.index]]
+url = "https://download.pytorch.org/whl/cu128"
+name = "pytorch-cu128"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-cu128" }

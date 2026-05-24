@@ -98,4 +98,8 @@ def query(opts, token, resume=True):
 
 if __name__ == '__main__':
     opts = get_opts()
-    run_with_retry(query, opts)
+    # Check if model is HuggingFace or requires tokens
+    if opts.model_name.startswith("hf:"):
+        run_without_retry(query, opts)
+    else:
+        run_with_retry(query, opts)

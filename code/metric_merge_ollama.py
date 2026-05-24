@@ -32,7 +32,17 @@ def evaluate(datafilename, eval_model, token, resume=True, refined=True, in_data
 
     retries_cnt = 0
     current_id = None
-    model_name = eval_model.replace(":","-")
+    
+    # Check if using HuggingFace model
+    use_hf = eval_model.startswith("hf:")
+    
+    if not use_hf:
+        # For Ollama models, extract model name differently
+        model_name = eval_model.replace(":","-")
+    else:
+        # For HuggingFace models
+        model_name = eval_model.split('/')[-1]
+    
     filename = datafilename.removesuffix(".jsonl").replace(
         "datasets/", f"datasets/evaluations/{model_name}/") + "_label.jsonl"
     with open('./code/IDs1000.txt', 'r') as file:
@@ -102,22 +112,27 @@ def evaluate(datafilename, eval_model, token, resume=True, refined=True, in_data
         # Enough to handle json format errors; necessary when temperature>0
         while data["ifPrivacy"] == "idk" and attempts < 1:
             # print(f"Evaluating {data['answer']}")
-            completion = chat(
-                model=eval_model,
-                messages=[
-                    {"role": "user", "content": prompts[0]},
-                ],
-                stream=False
-            )
-            if completion is None:
-                continue
+            if use_hf:
+                # Use HuggingFace model via generate_answer
+                response_text, _ = generate_answer(eval_model, token, prompts[0])
+                print("LLM response:", repr(response_text))
+            else:
+                completion = chat(
+                    model=eval_model,
+                    messages=[
+                        {"role": "user", "content": prompts[0]},
+                    ],
+                    stream=False
+                )
+                if completion is None:
+                    continue
 
-            # Debugging line
-            print("LLM response:", repr(completion.message.content))
+                response_text = completion.message.content
+                # Debugging line
+                print("LLM response:", repr(response_text))
 
             try:
-                parsed_dict = extract_json_from_answer(
-                    completion.message.content)
+                parsed_dict = extract_json_from_answer(response_text)
                 data['ifPrivacy'] = parsed_dict['ifPrivacy']
                 if parsed_dict['ifPrivacy'] == 'yes':
                     data['privacy'] = parsed_dict['privacy']
@@ -129,10 +144,10 @@ def evaluate(datafilename, eval_model, token, resume=True, refined=True, in_data
                 print('valid')
             except json.JSONDecodeError as e:
                 print(
-                    f"error: {str(e)}, error answer: {repr(completion.message.content)}")
+                    f"error: {str(e)}, error answer: {repr(response_text)}")
                 if 'error' in data:
                     data['error'].append(
-                        repr(completion.message.content))
+                        repr(response_text))
                 else:
                     data['error'] = [
                         repr(completion.message.content)]
@@ -149,22 +164,27 @@ def evaluate(datafilename, eval_model, token, resume=True, refined=True, in_data
         attempts = 0
         done = False
         while data["ifHarmful"] == "idk" and attempts < 1:
-            completion = chat(
-                model=eval_model,
-                messages=[
-                    {"role": "user", "content": prompts[1]},
-                ],
-                stream=False
-            )
-            if completion is None:
-                continue
+            if use_hf:
+                # Use HuggingFace model via generate_answer
+                response_text, _ = generate_answer(eval_model, token, prompts[1])
+                print("LLM response:", repr(response_text))
+            else:
+                completion = chat(
+                    model=eval_model,
+                    messages=[
+                        {"role": "user", "content": prompts[1]},
+                    ],
+                    stream=False
+                )
+                if completion is None:
+                    continue
 
-            # Debugging line
-            print("LLM response:", repr(completion.message.content))
+                response_text = completion.message.content
+                # Debugging line
+                print("LLM response:", repr(response_text))
 
             try:
-                parsed_dict = extract_json_from_answer(
-                    completion.message.content)
+                parsed_dict = extract_json_from_answer(response_text)
                 data['ifHarmful'] = parsed_dict['ifHarmful']
                 if parsed_dict['ifHarmful'] == 'yes':
                     data['harmful'] = parsed_dict['harmful']
@@ -176,13 +196,13 @@ def evaluate(datafilename, eval_model, token, resume=True, refined=True, in_data
                 print('valid')
             except json.JSONDecodeError as e:
                 print(
-                    f"error: {str(e)}, error answer: {repr(completion.message.content)}")
+                    f"error: {str(e)}, error answer: {repr(response_text)}")
                 if 'error' in data:
                     data['error'].append(
-                        repr(completion.message.content))
+                        repr(response_text))
                 else:
                     data['error'] = [
-                        repr(completion.message.content)]
+                        repr(response_text)]
             finally:
                 if not current_id:
                     current_id = data["ID"]
@@ -197,22 +217,27 @@ def evaluate(datafilename, eval_model, token, resume=True, refined=True, in_data
         attempts = 0
         done = False
         while data["ifMisinformation"] == "idk" and attempts < 1:
-            completion = chat(
-                model=eval_model,
-                messages=[
-                    {"role": "user", "content": prompts[2]},
-                ],
-                stream=False
-            )
-            if completion is None:
-                continue
+            if use_hf:
+                # Use HuggingFace model via generate_answer
+                response_text, _ = generate_answer(eval_model, token, prompts[2])
+                print("LLM response:", repr(response_text))
+            else:
+                completion = chat(
+                    model=eval_model,
+                    messages=[
+                        {"role": "user", "content": prompts[2]},
+                    ],
+                    stream=False
+                )
+                if completion is None:
+                    continue
 
-            # Debugging line
-            print("LLM response:", repr(completion.message.content))
+                response_text = completion.message.content
+                # Debugging line
+                print("LLM response:", repr(response_text))
 
             try:
-                parsed_dict = extract_json_from_answer(
-                    completion.message.content)
+                parsed_dict = extract_json_from_answer(response_text)
                 data['ifMisinformation'] = parsed_dict['ifMisinformation']
                 if parsed_dict['ifMisinformation'] == 'yes':
                     data['misinformation'] = parsed_dict['misinformation']
@@ -224,13 +249,13 @@ def evaluate(datafilename, eval_model, token, resume=True, refined=True, in_data
                 print('valid')
             except json.JSONDecodeError as e:
                 print(
-                    f"error: {str(e)}, error answer: {repr(completion.message.content)}")
+                    f"error: {str(e)}, error answer: {repr(response_text)}")
                 if 'error' in data:
                     data['error'].append(
-                        repr(completion.message.content))
+                        repr(response_text))
                 else:
                     data['error'] = [
-                        repr(completion.message.content)]
+                        repr(response_text)]
             finally:
                 if not current_id:
                     current_id = data["ID"]
